@@ -394,23 +394,6 @@
                     <input type="number" id="newPerDay" value="0.5" step="0.1" min="0.1">
                 </div>
                 <div class="form-group">
-                    <label for="oldRevisionType">Revision Type</label>
-                    <select id="oldRevisionType">
-                        <option value="percentage">Percentage of Total</option>
-                        <option value="fixed">Fixed Pages</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group" id="oldRevPercentageGroup">
-                    <label for="oldRevPercentage">Revision Percentage (%)</label>
-                    <input type="number" id="oldRevPercentage" value="14.28571429" step="0.1" min="0.1">
-                </div>
-                <div class="form-group" id="oldRevFixedGroup" style="display: none;">
-                    <label for="oldRevFixed">Fixed Revision Pages</label>
-                    <input type="number" id="oldRevFixed" value="1" min="1">
-                </div>
-                <div class="form-group">
                     <label for="newRevPages">New Revision Pages</label>
                     <input type="number" id="newRevPages" value="2" min="1">
                 </div>
@@ -453,7 +436,7 @@
                 Load Progress
             </button>
             <button id="resetProgressBtn" class="danger">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 9 16">
                     <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                     <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                 </svg>
@@ -562,14 +545,6 @@
             showToast('You are offline. Some features may be limited.');
         });
 
-        // App functionality
-        document.getElementById('oldRevisionType').addEventListener('change', function() {
-            const type = this.value;
-            document.getElementById('oldRevPercentageGroup').style.display = type === 'percentage' ? 'block' : 'none';
-            document.getElementById('oldRevFixedGroup').style.display = type === 'fixed' ? 'block' : 'none';
-            console.log('Revision type changed to:', type);
-        });
-
         // Set default start date to today
         document.getElementById('startDate').valueAsDate = new Date();
 
@@ -581,6 +556,7 @@
 
         let schedule = [];
         let totalMemorized = 0;
+        let lastOldRevisionEndPage = 0; // Track the last page used for Old Revision
 
         function generateSchedule() {
             console.log('Generating schedule...');
@@ -594,9 +570,6 @@
             const totalPages = parseFloat(document.getElementById('totalPages').value) || 604;
             const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value) || 0;
             const newPerDay = parseFloat(document.getElementById('newPerDay').value) || 0.5;
-            const oldRevType = document.getElementById('oldRevisionType').value;
-            const oldRevPercentage = parseFloat(document.getElementById('oldRevPercentage').value) / 100 || 0.1428571429;
-            const oldRevFixed = parseFloat(document.getElementById('oldRevFixed').value) || 1;
             const newRevPages = parseFloat(document.getElementById('newRevPages').value) || 2;
 
             if (alreadyMemorized > totalPages) {
@@ -608,6 +581,7 @@
             schedule = [];
             totalMemorized = alreadyMemorized;
             let day = 1;
+            lastOldRevisionEndPage = 0; // Reset for new schedule
 
             while (totalMemorized < totalPages) {
                 const currentDate = new Date(startDate);
@@ -624,17 +598,38 @@
                 totalMemorized += newMemorized;
                 const endPage = totalMemorized;
 
-                let oldRevisionPages = 0;
-                if (oldRevType === 'percentage') {
-                    oldRevisionPages = totalMemorized * oldRevPercentage;
-                } else {
-                    oldRevisionPages = Math.min(oldRevFixed, totalMemorized);
-                }
-                const oldRevisionStart = 0.1;
-                const oldRevisionEnd = oldRevisionPages;
-
-                const newRevisionStart = Math.max(0.1, totalMemorized - newRevPages);
+                // New Revision range
+                const newRevisionStart = Math.max(0.1, totalMemorized - newRevPages + 0.1);
                 const newRevisionEnd = totalMemorized;
+
+                // Old Revision: 1/7 of Total Memorized (rounded up)
+                const oldRevisionCount = Math.ceil(totalMemorized / 7);
+                let oldRevisionPages = [];
+
+                // Determine the starting page for Old Revision
+                let startOldRevisionPage = lastOldRevisionEndPage + 1;
+                const newRevisionStartPage = Math.ceil(newRevisionStart);
+
+                // If Old Revision reaches or exceeds New Revision start, reset to Page 1
+                if (startOldRevisionPage >= newRevisionStartPage) {
+                    startOldRevisionPage = 1;
+                }
+
+                // Generate the list of Old Revision pages
+                for (let i = 0; i < oldRevisionCount; i++) {
+                    let page = startOldRevisionPage + i;
+                    // If the page exceeds the New Revision start, reset to 1 and continue
+                    if (page >= newRevisionStartPage) {
+                        page = 1 + (i - (newRevisionStartPage - startOldRevisionPage));
+                    }
+                    // Ensure the page doesn't exceed Total Memorized
+                    if (page <= Math.floor(totalMemorized)) {
+                        oldRevisionPages.push(page);
+                    }
+                }
+
+                // Update the last Old Revision page for the next day
+                lastOldRevisionEndPage = oldRevisionPages.length > 0 ? oldRevisionPages[oldRevisionPages.length - 1] : 0;
 
                 const newCompleted = localStorage.getItem(`day-${day}-new-completed`) === 'true' || 
                                     (day === 1 && alreadyMemorized > 0);
@@ -652,8 +647,7 @@
                         completed: newCompleted
                     },
                     oldRevision: {
-                        start: oldRevisionStart,
-                        end: oldRevisionEnd,
+                        pages: oldRevisionPages, // Store the specific pages
                         completed: oldCompleted
                     },
                     newRevision: {
@@ -760,7 +754,7 @@
                                             ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value) > 0 ? 'disabled' : ''}>
                                     </div>
                                     <div class="task-item">
-                                        <span class="task-label">Old Rev: P${day.oldRevision.start.toFixed(1)}-P${day.oldRevision.end.toFixed(1)}</span>
+                                        <span class="task-label">Old Rev: ${day.oldRevision.pages.length > 0 ? 'P' + day.oldRevision.pages.join(', P') : 'None'}</span>
                                         <input type="checkbox" class="progress-checkbox" 
                                             data-day="${day.day}" data-task="old" 
                                             ${day.oldRevision.completed ? 'checked' : ''}
@@ -872,11 +866,9 @@
                 totalPages: document.getElementById('totalPages').value,
                 alreadyMemorized: document.getElementById('alreadyMemorized').value,
                 newPerDay: document.getElementById('newPerDay').value,
-                oldRevisionType: document.getElementById('oldRevisionType').value,
-                oldRevPercentage: document.getElementById('oldRevPercentage').value,
-                oldRevFixed: document.getElementById('oldRevFixed').value,
                 newRevPages: document.getElementById('newRevPages').value,
                 totalMemorized: totalMemorized,
+                lastOldRevisionEndPage: lastOldRevisionEndPage,
                 schedule: schedule.map(day => ({
                     day: day.day,
                     newCompleted: day.newMemorized.completed,
@@ -911,15 +903,10 @@
                 document.getElementById('totalPages').value = settings.totalPages || 604;
                 document.getElementById('alreadyMemorized').value = settings.alreadyMemorized || 0;
                 document.getElementById('newPerDay').value = settings.newPerDay || 0.5;
-                document.getElementById('oldRevisionType').value = settings.oldRevisionType || 'percentage';
-                document.getElementById('oldRevPercentage').value = settings.oldRevPercentage || 14.28571429;
-                document.getElementById('oldRevFixed').value = settings.oldRevFixed || 1;
                 document.getElementById('newRevPages').value = settings.newRevPages || 2;
                 
-                document.getElementById('oldRevisionType').dispatchEvent(new Event('change'));
-                console.log('Form settings loaded:', settings);
-                
                 totalMemorized = parseFloat(settings.totalMemorized) || parseFloat(settings.alreadyMemorized) || 0;
+                lastOldRevisionEndPage = parseFloat(settings.lastOldRevisionEndPage) || 0;
                 
                 generateSchedule();
                 
@@ -964,14 +951,10 @@
                 document.getElementById('totalPages').value = 604;
                 document.getElementById('alreadyMemorized').value = 0;
                 document.getElementById('newPerDay').value = 0.5;
-                document.getElementById('oldRevisionType').value = 'percentage';
-                document.getElementById('oldRevPercentage').value = 14.28571429;
-                document.getElementById('oldRevFixed').value = 1;
                 document.getElementById('newRevPages').value = 2;
                 
-                document.getElementById('oldRevisionType').dispatchEvent(new Event('change'));
-                
                 totalMemorized = 0;
+                lastOldRevisionEndPage = 0;
                 schedule = [];
                 
                 document.getElementById('scheduleOutput').innerHTML = '';
@@ -1021,7 +1004,7 @@
                 day.day,
                 day.date,
                 `P${day.newMemorized.start.toFixed(1)}-P${day.newMemorized.end.toFixed(1)}`,
-                `P${day.oldRevision.start.toFixed(1)}-P${day.oldRevision.end.toFixed(1)}`,
+                day.oldRevision.pages.length > 0 ? 'P' + day.oldRevision.pages.join(', P') : 'None',
                 `P${day.newRevision.start.toFixed(1)}-P${day.newRevision.end.toFixed(1)}`,
                 day.totalMemorized.toFixed(1),
                 calculateDayCompletion(day) >= 100 ? '✅' : 
