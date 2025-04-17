@@ -394,6 +394,10 @@
                     <input type="number" id="newPerDay" value="0.5" step="0.1" min="0.1">
                 </div>
                 <div class="form-group">
+                    <label for="oldRevPercentage">Old Revision Percentage (%)</label>
+                    <input type="number" id="oldRevPercentage" value="14.2857" step="0.1" min="0.1">
+                </div>
+                <div class="form-group">
                     <label for="newRevPages">New Revision Pages</label>
                     <input type="number" id="newRevPages" value="2" min="1">
                 </div>
@@ -436,7 +440,7 @@
                 Load Progress
             </button>
             <button id="resetProgressBtn" class="danger">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 9 16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                     <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                 </svg>
@@ -570,6 +574,7 @@
             const totalPages = parseFloat(document.getElementById('totalPages').value) || 604;
             const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value) || 0;
             const newPerDay = parseFloat(document.getElementById('newPerDay').value) || 0.5;
+            const oldRevPercentage = parseFloat(document.getElementById('oldRevPercentage').value) / 100 || 0.142857;
             const newRevPages = parseFloat(document.getElementById('newRevPages').value) || 2;
 
             if (alreadyMemorized > totalPages) {
@@ -602,8 +607,8 @@
                 const newRevisionStart = Math.max(0.1, totalMemorized - newRevPages + 0.1);
                 const newRevisionEnd = totalMemorized;
 
-                // Old Revision: 1/7 of Total Memorized (rounded up)
-                const oldRevisionCount = Math.ceil(totalMemorized / 7);
+                // Old Revision: User-specified percentage of Total Memorized (rounded up)
+                const oldRevisionCount = Math.ceil(totalMemorized * oldRevPercentage);
                 let oldRevisionPages = [];
 
                 // Determine the starting page for Old Revision
@@ -866,6 +871,7 @@
                 totalPages: document.getElementById('totalPages').value,
                 alreadyMemorized: document.getElementById('alreadyMemorized').value,
                 newPerDay: document.getElementById('newPerDay').value,
+                oldRevPercentage: document.getElementById('oldRevPercentage').value,
                 newRevPages: document.getElementById('newRevPages').value,
                 totalMemorized: totalMemorized,
                 lastOldRevisionEndPage: lastOldRevisionEndPage,
@@ -903,6 +909,7 @@
                 document.getElementById('totalPages').value = settings.totalPages || 604;
                 document.getElementById('alreadyMemorized').value = settings.alreadyMemorized || 0;
                 document.getElementById('newPerDay').value = settings.newPerDay || 0.5;
+                document.getElementById('oldRevPercentage').value = settings.oldRevPercentage || 14.2857;
                 document.getElementById('newRevPages').value = settings.newRevPages || 2;
                 
                 totalMemorized = parseFloat(settings.totalMemorized) || parseFloat(settings.alreadyMemorized) || 0;
@@ -951,6 +958,7 @@
                 document.getElementById('totalPages').value = 604;
                 document.getElementById('alreadyMemorized').value = 0;
                 document.getElementById('newPerDay').value = 0.5;
+                document.getElementById('oldRevPercentage').value = 14.2857;
                 document.getElementById('newRevPages').value = 2;
                 
                 totalMemorized = 0;
@@ -989,6 +997,7 @@
             doc.text(`Start Date: ${document.getElementById('startDate').value}`, 14, 35);
             doc.text(`Total Pages: ${document.getElementById('totalPages').value}`, 14, 40);
             doc.text(`New Pages/Day: ${document.getElementById('newPerDay').value}`, 14, 45);
+            doc.text(`Old Revision Percentage: ${document.getElementById('oldRevPercentage').value}%`, 14, 50);
             
             const headers = [
                 'Day',
@@ -1014,7 +1023,7 @@
             doc.autoTable({
                 head: [headers],
                 body: data,
-                startY: alreadyMemorized > 0 ? 50 : 40,
+                startY: alreadyMemorized > 0 ? 55 : 45,
                 styles: {
                     fontSize: 8,
                     cellPadding: 3,
