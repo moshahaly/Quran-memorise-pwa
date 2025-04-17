@@ -15,7 +15,6 @@
         :root {
             --primary: #3498db;
             --primary-dark: #2980b9;
-           が生まれました！😄
             --secondary: #2c3e50;
             --accent: #e74c3c;
             --success: #27ae60;
@@ -544,7 +543,7 @@
                     });
                 } catch (err) {
                     console.error('ServiceWorker registration failed: ', err);
-                    showToast('Failed to register service worker');
+                    showToast('Failed to register service worker: ' + err.message);
                 }
             });
         } else {
@@ -563,33 +562,12 @@
             showToast('You are offline. Some features may be limited.');
         });
 
-        // Verify manifest and icons
-        fetch('/manifest.webmanifest')
-            .then(response => {
-                if (!response.ok) throw new Error('Manifest not found');
-                return response.json();
-            })
-            .then(manifest => {
-                console.log('Manifest loaded successfully:', manifest);
-                manifest.icons.forEach(icon => {
-                    fetch(icon.src)
-                        .then(res => {
-                            if (!res.ok) throw new Error(`Icon not found: ${icon.src}`);
-                            console.log(`Icon loaded: ${icon.src}`);
-                        })
-                        .catch(err => console.error(err.message));
-                });
-            })
-            .catch(err => {
-                console.error('Failed to load manifest:', err);
-                showToast('PWA configuration error. Please check console.');
-            });
-
         // App functionality
         document.getElementById('oldRevisionType').addEventListener('change', function() {
             const type = this.value;
             document.getElementById('oldRevPercentageGroup').style.display = type === 'percentage' ? 'block' : 'none';
             document.getElementById('oldRevFixedGroup').style.display = type === 'fixed' ? 'block' : 'none';
+            console.log('Revision type changed to:', type);
         });
 
         // Set default start date to today
@@ -605,9 +583,11 @@
         let totalMemorized = 0;
 
         function generateSchedule() {
+            console.log('Generating schedule...');
             const startDate = new Date(document.getElementById('startDate').value);
             if (isNaN(startDate.getTime())) {
                 showToast('Please select a valid start date');
+                console.error('Invalid start date');
                 return;
             }
 
@@ -621,6 +601,7 @@
 
             if (alreadyMemorized > totalPages) {
                 showToast('Already memorized pages cannot exceed total pages');
+                console.error('Already memorized exceeds total pages');
                 return;
             }
 
@@ -689,9 +670,11 @@
             updateStats(startDate, schedule);
             displaySchedule(schedule);
             showToast('Schedule generated successfully!');
+            console.log('Schedule generated with', schedule.length, 'days');
         }
 
         function updateStats(startDate, schedule) {
+            console.log('Updating stats...');
             const statsContainer = document.getElementById('statsContainer');
             statsContainer.style.display = 'flex';
             
@@ -713,14 +696,17 @@
             const totalPages = parseFloat(document.getElementById('totalPages').value) || 604;
             const progress = Math.round((alreadyMemorized / totalPages) * 100);
             document.getElementById('progressStat').textContent = `${progress}%`;
+            console.log('Stats updated: Progress', progress + '%');
         }
 
         function displaySchedule(schedule) {
+            console.log('Displaying schedule...');
             const output = document.getElementById('scheduleOutput');
             output.innerHTML = '';
 
             if (schedule.length === 0) {
                 output.innerHTML = '<p style="text-align: center; padding: 20px;">No schedule generated yet. Click "Generate Schedule" to create one.</p>';
+                console.warn('No schedule to display');
                 return;
             }
 
@@ -829,8 +815,10 @@
                     }
                     
                     showToast('Progress updated!');
+                    console.log(`Progress updated for day ${day}, task ${task}`);
                 });
             });
+            console.log('Schedule displayed with', schedule.length, 'days');
         }
 
         function getStatusBadge(day) {
@@ -872,8 +860,10 @@
         }
 
         function saveProgress() {
+            console.log('Saving progress...');
             if (schedule.length === 0) {
                 showToast('No schedule to save. Generate a schedule first.');
+                console.warn('No schedule to save');
                 return;
             }
 
@@ -896,8 +886,9 @@
             };
             
             try {
-                localStorage.setItem('quran AttendanceMemorizerSettings', JSON.stringify(settings));
+                localStorage.setItem('quranMemorizerSettings', JSON.stringify(settings));
                 showToast('Progress saved successfully!');
+                console.log('Progress saved');
             } catch (e) {
                 showToast('Error saving progress: ' + e.message);
                 console.error('Error saving progress:', e);
@@ -905,9 +896,11 @@
         }
 
         function loadProgress() {
+            console.log('Loading progress...');
             const savedSettings = localStorage.getItem('quranMemorizerSettings');
             if (!savedSettings) {
                 showToast('No saved progress found');
+                console.warn('No saved progress found');
                 return;
             }
             
@@ -924,6 +917,7 @@
                 document.getElementById('newRevPages').value = settings.newRevPages || 2;
                 
                 document.getElementById('oldRevisionType').dispatchEvent(new Event('change'));
+                console.log('Form settings loaded:', settings);
                 
                 totalMemorized = parseFloat(settings.totalMemorized) || parseFloat(settings.alreadyMemorized) || 0;
                 
@@ -942,10 +936,11 @@
                             localStorage.setItem(`day-${savedDay.day}-rev-completed`, savedDay.revCompleted);
                         }
                     });
-                    
-                    displaySchedule(schedule);
+                    console.log('Schedule progress loaded:', settings.schedule.length, 'days');
                 }
                 
+                displaySchedule(schedule);
+                updateStats(new Date(settings.startDate), schedule);
                 showToast('Progress loaded successfully!');
             } catch (e) {
                 showToast('Error loading progress: ' + e.message);
@@ -954,6 +949,7 @@
         }
 
         function resetProgress() {
+            console.log('Resetting progress...');
             if (confirm('Are you sure you want to reset ALL progress? This cannot be undone.')) {
                 localStorage.removeItem('quranMemorizerSettings');
                 
@@ -982,12 +978,15 @@
                 document.getElementById('statsContainer').style.display = 'none';
                 
                 showToast('Progress reset successfully!');
+                console.log('Progress reset');
             }
         }
 
         function exportToPdf() {
+            console.log('Exporting to PDF...');
             if (schedule.length === 0) {
                 showToast('No schedule to export. Generate a schedule first.');
+                console.warn('No schedule to export');
                 return;
             }
 
@@ -1069,9 +1068,11 @@
 
             doc.save('quran-memorization-schedule.pdf');
             showToast('PDF exported successfully!');
+            console.log('PDF exported');
         }
 
         window.addEventListener('load', () => {
+            console.log('Window loaded, initializing app...');
             loadProgress();
         });
     </script>
