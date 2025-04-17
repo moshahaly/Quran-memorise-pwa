@@ -8,245 +8,439 @@
     <title>Quran Memorization Schedule</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon-192x192.png" type="image/png">
-    <!-- jsPDF for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-           :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #2c3e50;
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --gray: #95a5a6;
+            --light-gray: #f5f5f5;
+            --white: #ffffff;
         }
-        
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            margin: 0;
+            background-color: var(--light-gray);
+            color: var(--dark);
             padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
         }
-        
+
         .container {
             max-width: 1000px;
             margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background: var(--white);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
-        
+
         h1 {
             text-align: center;
-            color: var(--secondary-color);
+            color: var(--secondary);
             margin-bottom: 30px;
+            font-size: 2.2rem;
         }
-        
+
+        .form-section {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .form-section h2 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
-        
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: bold;
-            color: var(--secondary-color);
+            font-weight: 600;
+            color: var(--secondary);
         }
-        
+
         input, select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
             font-size: 16px;
+            transition: border-color 0.3s;
         }
-        
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
         .button-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin: 25px 0;
+            gap: 15px;
+            margin: 30px 0;
         }
-        
+
         button {
-            background: var(--primary-color);
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 18px;
-            border-radius: 4px;
+            padding: 14px 20px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: 600;
             transition: all 0.3s ease;
             flex: 1 1 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        
+
         button:hover {
-            background: #2980b9;
+            background: var(--primary-dark);
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
+
         button.secondary {
-            background: var(--secondary-color);
+            background: var(--secondary);
         }
-        
+
+        button.secondary:hover {
+            background: #1a252f;
+        }
+
         button.danger {
-            background: var(--accent-color);
+            background: var(--accent);
         }
-        
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        button.success {
+            background: var(--success);
+        }
+
+        button.success:hover {
+            background: #219653;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
         }
-        
+
         th, td {
             border: 1px solid #ddd;
-            padding: 12px;
+            padding: 15px;
             text-align: center;
         }
-        
+
         th {
-            background-color: var(--secondary-color);
+            background-color: var(--secondary);
             color: white;
             position: sticky;
             top: 0;
+            font-weight: 600;
         }
-        
+
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        
+
         tr:hover {
             background-color: #f1f1f1;
         }
-        
+
         .month-header {
-            background-color: var(--secondary-color);
+            background-color: var(--secondary);
             color: white;
             margin-top: 40px;
-            padding: 15px;
-            border-radius: 4px;
-            font-size: 1.2em;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 1.3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
+
         .progress-checkbox {
             transform: scale(1.5);
             margin: 0 5px;
             cursor: pointer;
+            accent-color: var(--primary);
         }
-        
+
         .task-item {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             gap: 10px;
+            margin: 8px 0;
+            padding: 10px;
+            background: rgba(236, 240, 241, 0.5);
+            border-radius: 6px;
         }
-        
+
         .task-label {
             flex: 1;
             text-align: left;
+            font-weight: 500;
         }
-        
-        .install-btn {
-            background: #27ae60;
-            display: none;
-            margin-bottom: 20px;
-        }
-        
+
         .date-display {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 3px;
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 5px;
+            font-style: italic;
         }
-        
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-completed {
+            background-color: #d5f5e3;
+            color: #27ae60;
+        }
+
+        .status-inprogress {
+            background-color: #fef9e7;
+            color: #f39c12;
+        }
+
+        .status-notstarted {
+            background-color: #fdedec;
+            color: #e74c3c;
+        }
+
+        #pwa-install-container {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card h3 {
+            color: var(--gray);
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
         @media (max-width: 768px) {
             .container {
-                padding: 15px;
+                padding: 20px;
             }
-            
+
+            .form-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
             button {
                 flex: 1 1 100%;
             }
-            
+
             th, td {
-                padding: 8px;
+                padding: 10px;
                 font-size: 14px;
             }
-            
+
             .progress-checkbox {
                 transform: scale(1.2);
             }
+
+            .task-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
         }
-        
-        /* PWA specific styles */
-        #pwa-install-container {
-            text-align: center;
-            margin-bottom: 20px;
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        /* [Previous CSS remains exactly the same] */
+
+        .schedule-item {
+            animation: fadeIn 0.3s ease forwards;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="pwa-install-container">
-            <button id="installBtn" class="install-btn">Install App</button>
+            <button id="installBtn" class="install-btn success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/>
+                </svg>
+                Install App
+            </button>
         </div>
         
-        <h1>Quran Memorization Schedule Generator</h1>
+        <h1>📖 Quran Memorization Schedule</h1>
         
-        <div class="form-group">
-            <label for="startDate">Start Date:</label>
-            <input type="date" id="startDate">
+        <div class="form-section">
+            <h2>📅 Schedule Settings</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="form-group">
+                    <label for="totalPages">Total Quran Pages</label>
+                    <input type="number" id="totalPages" value="604" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="alreadyMemorized">Already Memorized Pages</label>
+                    <input type="number" id="alreadyMemorized" value="0" min="0">
+                </div>
+            </div>
         </div>
-        
-        <div class="form-group">
-            <label for="totalPages">Total Quran Pages:</label>
-            <input type="number" id="totalPages" value="604" min="1">
+
+        <div class="form-section">
+            <h2>⚙️ Memorization Settings</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="newPerDay">New Pages Per Day</label>
+                    <input type="number" id="newPerDay" value="0.5" step="0.1" min="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="oldRevisionType">Revision Type</label>
+                    <select id="oldRevisionType">
+                        <option value="percentage">Percentage of Total</option>
+                        <option value="fixed">Fixed Pages</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" id="oldRevPercentageGroup">
+                    <label for="oldRevPercentage">Revision Percentage (%)</label>
+                    <input type="number" id="oldRevPercentage" value="14.28571429" step="0.1" min="0.1">
+                </div>
+                <div class="form-group" id="oldRevFixedGroup" style="display: none;">
+                    <label for="oldRevFixed">Fixed Revision Pages</label>
+                    <input type="number" id="oldRevFixed" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="newRevPages">New Revision Pages</label>
+                    <input type="number" id="newRevPages" value="2" min="1">
+                </div>
+            </div>
         </div>
-        
-        <!-- New Already Memorized Input -->
-        <div class="form-group">
-            <label for="alreadyMemorized">Already Memorized Pages:</label>
-            <input type="number" id="alreadyMemorized" value="0" min="0">
+
+        <div class="stats-container" id="statsContainer" style="display: none;">
+            <div class="stat-card">
+                <h3>Total Days</h3>
+                <p id="totalDaysStat">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Completion Date</h3>
+                <p id="completionDateStat">-</p>
+            </div>
+            <div class="stat-card">
+                <h3>Progress</h3>
+                <p id="progressStat">0%</p>
+            </div>
         </div>
-        
-        <div class="form-group">
-            <label for="newPerDay">New Memorization (Pages/Day):</label>
-            <input type="number" id="newPerDay" value="0.5" step="0.1" min="0.1">
-        </div>
-        
-        <div class="form-group">
-            <label for="oldRevisionType">Old Revision:</label>
-            <select id="oldRevisionType">
-                <option value="percentage">Percentage of Total Memorized</option>
-                <option value="fixed">Fixed Pages</option>
-            </select>
-        </div>
-        
-        <div class="form-group" id="oldRevPercentageGroup">
-            <label for="oldRevPercentage">Percentage (%):</label>
-            <input type="number" id="oldRevPercentage" value="14.28571429" step="0.1" min="0.1">
-        </div>
-        
-        <div class="form-group" id="oldRevFixedGroup" style="display: none;">
-            <label for="oldRevFixed">Fixed Pages:</label>
-            <input type="number" id="oldRevFixed" value="1" min="1">
-        </div>
-        
-        <div class="form-group">
-            <label for="newRevPages">New Revision (Last X Pages):</label>
-            <input type="number" id="newRevPages" value="2" min="1">
-        </div>
-        
+
         <div class="button-group">
-            <button id="generateBtn">Generate Schedule</button>
-            <button id="saveProgressBtn" class="secondary">Save Progress</button>
-            <button id="loadProgressBtn" class="secondary">Load Progress</button>
-            <button id="resetProgressBtn" class="danger">Reset Progress</button>
-            <button id="exportPdfBtn">Export to PDF</button>
+            <button id="generateBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+                    <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+                </svg>
+                Generate Schedule
+            </button>
+            <button id="saveProgressBtn" class="secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/>
+                </svg>
+                Save Progress
+            </button>
+            <button id="loadProgressBtn" class="secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 1a5 5 0 0 0-5 5v1h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a6 6 0 1 1 12 0v6a2.5 2.5 0 0 1-2.5 2.5H9.366a1 1 0 0 1-.866.5h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 .866.5H11.5A1.5 1.5 0 0 0 13 12h-1a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h1V6a5 5 0 0 0-5-5z"/>
+                </svg>
+                Load Progress
+            </button>
+            <button id="resetProgressBtn" class="danger">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+                Reset Progress
+            </button>
+            <button id="exportPdfBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5.523 10.424c.14-.082.293-.162.459-.238a7.878 7.878 0 0 1-.45.606c-.28.337-.498.516-.635.572a.266.266 0 0 1-.035.012.282.282 0 0 1-.026-.044c-.056-.11-.054-.216.04-.36.106-.165.319-.354.647-.548zm2.455-1.647c-.119.025-.237.05-.356.078a21.035 21.035 0 0 0 .5-1.05 11.96 11.96 0 0 0 .51.858c-.217.032-.436.07-.654.114zm2.525.939a3.888 3.888 0 0 1-.435-.41c.228.005.434.022.612.054.317.057.466.147.518.209a.095.095 0 0 1 .026.064.436.436 0 0 1-.06.2.307.307 0 0 1-.094.124.107.107 0 0 1-.069.015c-.09-.003-.258-.066-.498-.256zM8.278 4.97c-.04.244-.108.524-.2.829a4.86 4.86 0 0 1-.089-.346c-.076-.353-.087-.63-.046-.822.038-.177.11-.248.196-.283a.517.517 0 0 1 .145-.04c.013.03.028.092.032.198.005.122-.007.277-.038.465z"/>
+                    <path fill-rule="evenodd" d="M4 0h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm.165 11.668c.09.18.23.343.438.419.207.075.412.04.58-.03.318-.13.635-.436.926-.786.333-.401.683-.927 1.021-1.51a11.64 11.64 0 0 1 1.997-.406c.3.383.61.713.91.95.28.22.603.403.934.417a.856.856 0 0 0 .51-.138c.155-.101.27-.247.354-.416.09-.181.145-.37.138-.563a.844.844 0 0 0-.2-.518c-.226-.27-.596-.4-.96-.465a5.76 5.76 0 0 0-1.335-.05 10.954 10.954 0 0 1-.98-1.686c.25-.66.437-1.284.52-1.794.036-.218.055-.426.048-.614a1.238 1.238 0 0 0-.127-.538.7.7 0 0 0-.477-.365c-.202-.043-.41 0-.601.077-.377.15-.576.47-.651.823-.073.34-.04.736.046 1.136.088.406.238.848.43 1.295a19.707 19.707 0 0 1-1.062 2.227 7.662 7.662 0 0 0-1.482.645c-.37.22-.699.48-.897.787-.21.326-.275.714-.08 1.103z"/>
+                </svg>
+                Export to PDF
+            </button>
         </div>
         
         <div id="scheduleOutput"></div>
@@ -256,7 +450,44 @@
         // Initialize jsPDF
         const { jsPDF } = window.jspdf;
 
-        // [Previous PWA code remains the same]
+        // PWA variables
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // PWA installation prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted install prompt');
+                    } else {
+                        console.log('User dismissed install prompt');
+                    }
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                });
+            }
+        });
 
         // App functionality
         document.getElementById('oldRevisionType').addEventListener('change', function() {
@@ -338,6 +569,7 @@
                 schedule.push({
                     day,
                     date: dateString,
+                    dateObj: currentDate,
                     newMemorized: {
                         start: startPage,
                         end: endPage,
@@ -361,7 +593,35 @@
                 day++;
             }
 
+            // Update stats
+            updateStats(startDate, schedule);
             displaySchedule(schedule);
+        }
+
+        function updateStats(startDate, schedule) {
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.style.display = 'flex';
+            
+            const totalDays = schedule.length;
+            document.getElementById('totalDaysStat').textContent = totalDays;
+            
+            // Calculate completion date
+            if (totalDays > 0) {
+                const completionDate = new Date(startDate);
+                completionDate.setDate(startDate.getDate() + totalDays - 1);
+                document.getElementById('completionDateStat').textContent = 
+                    completionDate.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric'
+                    });
+            }
+            
+            // Calculate progress
+            const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value);
+            const totalPages = parseFloat(document.getElementById('totalPages').value);
+            const progress = Math.round((alreadyMemorized / totalPages) * 100);
+            document.getElementById('progressStat').textContent = `${progress}%`;
         }
 
         function displaySchedule(schedule) {
@@ -378,9 +638,21 @@
                 monthHeader.className = 'month-header';
                 
                 // Get month name from the first day in the month
-                const firstDate = new Date(monthSchedule[0].date);
+                const firstDate = monthSchedule[0].dateObj;
                 const monthName = firstDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                monthHeader.textContent = `${monthName} (Days ${monthStart + 1}-${monthEnd})`;
+                monthHeader.textContent = `${monthName}`;
+                
+                // Add progress percentage
+                const progressSpan = document.createElement('span');
+                const completedDays = monthSchedule.filter(day => 
+                    calculateDayCompletion(day) >= 100
+                ).length;
+                const progressPercent = Math.round((completedDays / monthSchedule.length) * 100);
+                progressSpan.textContent = `${progressPercent}% completed`;
+                progressSpan.style.fontSize = '0.9rem';
+                progressSpan.style.opacity = '0.9';
+                monthHeader.appendChild(progressSpan);
+                
                 output.appendChild(monthHeader);
 
                 const table = document.createElement('table');
@@ -395,9 +667,9 @@
                     </thead>
                     <tbody>
                         ${monthSchedule.map(day => `
-                            <tr>
+                            <tr class="schedule-item">
                                 <td>
-                                    Day ${day.day}
+                                    <strong>Day ${day.day}</strong>
                                     <div class="date-display">${day.date}</div>
                                 </td>
                                 <td>
@@ -406,14 +678,14 @@
                                         <input type="checkbox" class="progress-checkbox" 
                                             data-day="${day.day}" data-task="new" 
                                             ${day.newMemorized.completed ? 'checked' : ''}
-                                            ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value > 0 ? 'disabled' : ''}>
+                                            ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value > 0) ? 'disabled' : ''}>
                                     </div>
                                     <div class="task-item">
                                         <span class="task-label">Old Rev: P${day.oldRevision.start.toFixed(1)}-P${day.oldRevision.end.toFixed(1)}</span>
                                         <input type="checkbox" class="progress-checkbox" 
                                             data-day="${day.day}" data-task="old" 
                                             ${day.oldRevision.completed ? 'checked' : ''}
-                                            ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value > 0 ? 'disabled' : ''}>
+                                            ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value > 0) ? 'disabled' : ''}>
                                     </div>
                                     <div class="task-item">
                                         <span class="task-label">New Rev: P${day.newRevision.start.toFixed(1)}-P${day.newRevision.end.toFixed(1)}</span>
@@ -422,10 +694,12 @@
                                             ${day.newRevision.completed ? 'checked' : ''}>
                                     </div>
                                 </td>
-                                <td>${day.totalMemorized.toFixed(1)}</td>
                                 <td>
-                                    ${calculateDayCompletion(day) >= 100 ? '✅ Completed' : 
-                                      calculateDayCompletion(day) > 0 ? `🟡 ${calculateDayCompletion(day)}%` : '🔴 Not started'}
+                                    <strong>${day.totalMemorized.toFixed(1)}</strong>
+                                    <div>of ${document.getElementById('totalPages').value}</div>
+                                </td>
+                                <td>
+                                    ${getStatusBadge(day)}
                                 </td>
                             </tr>
                         `).join('')}
@@ -445,13 +719,43 @@
                     const row = this.closest('tr');
                     const dayData = schedule.find(d => d.day == day);
                     if (dayData) {
-                        const completion = calculateDayCompletion(dayData);
                         const statusCell = row.querySelector('td:nth-child(4)');
-                        statusCell.textContent = completion >= 100 ? '�� Completed' : 
-                                              completion > 0 ? `🟡 ${completion}%` : '🔴 Not started';
+                        statusCell.innerHTML = getStatusBadge(dayData);
+                        
+                        // Update month progress
+                        updateMonthProgress(row.closest('table'));
                     }
                 });
             });
+        }
+
+        function getStatusBadge(day) {
+            const completion = calculateDayCompletion(day);
+            if (completion >= 100) {
+                return '<span class="status-badge status-completed">✅ Completed</span>';
+            } else if (completion > 0) {
+                return `<span class="status-badge status-inprogress">🟡 ${completion}%</span>`;
+            } else {
+                return '<span class="status-badge status-notstarted">🔴 Not started</span>';
+            }
+        }
+
+        function updateMonthProgress(table) {
+            const monthHeader = table.previousElementSibling;
+            if (monthHeader && monthHeader.classList.contains('month-header')) {
+                const rows = table.querySelectorAll('tbody tr');
+                const completedDays = Array.from(rows).filter(row => {
+                    const statusCell = row.querySelector('td:nth-child(4)');
+                    return statusCell.textContent.includes('Completed');
+                }).length;
+                const progressPercent = Math.round((completedDays / rows.length) * 100);
+                
+                // Update progress in header
+                const progressSpan = monthHeader.querySelector('span');
+                if (progressSpan) {
+                    progressSpan.textContent = `${progressPercent}% completed`;
+                }
+            }
         }
 
         function calculateDayCompletion(day) {
@@ -547,14 +851,26 @@
 
         function exportToPdf() {
             const doc = new jsPDF();
-            doc.text('Quran Memorization Schedule', 10, 10);
-
+            
+            // Title
+            doc.setFontSize(20);
+            doc.text('Quran Memorization Schedule', 105, 15, { align: 'center' });
+            
             // Add already memorized info
             const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value);
             if (alreadyMemorized > 0) {
-                doc.text(`Already Memorized: Pages 0.1-${alreadyMemorized.toFixed(1)}`, 10, 20);
+                doc.setFontSize(12);
+                doc.text(`Already Memorized: Pages 0.1-${alreadyMemorized.toFixed(1)}`, 14, 25);
             }
-
+            
+            // Add stats
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Start Date: ${document.getElementById('startDate').value}`, 14, 35);
+            doc.text(`Total Pages: ${document.getElementById('totalPages').value}`, 14, 40);
+            doc.text(`New Pages/Day: ${document.getElementById('newPerDay').value}`, 14, 45);
+            
+            // Table headers
             const headers = [
                 'Day',
                 'Date',
@@ -565,6 +881,7 @@
                 'Status'
             ];
 
+            // Table data
             const data = schedule.map(day => [
                 day.day,
                 day.date,
@@ -572,29 +889,49 @@
                 `P${day.oldRevision.start.toFixed(1)}-P${day.oldRevision.end.toFixed(1)}`,
                 `P${day.newRevision.start.toFixed(1)}-P${day.newRevision.end.toFixed(1)}`,
                 day.totalMemorized.toFixed(1),
-                calculateDayCompletion(day) >= 100 ? 'Completed' : 
-                calculateDayCompletion(day) > 0 ? `${calculateDayCompletion(day)}%` : 'Not started'
+                calculateDayCompletion(day) >= 100 ? '✅' : 
+                calculateDayCompletion(day) > 0 ? '🟡' : '🔴'
             ]);
 
+            // Create table
             doc.autoTable({
                 head: [headers],
                 body: data,
-                startY: alreadyMemorized > 0 ? 30 : 20,
+                startY: alreadyMemorized > 0 ? 50 : 40,
                 styles: {
                     fontSize: 8,
                     cellPadding: 3,
-                    overflow: 'linebreak'
+                    overflow: 'linebreak',
+                    textColor: [33, 33, 33]
+                },
+                headStyles: {
+                    fillColor: [44, 62, 80],
+                    textColor: [255, 255, 255],
+                    fontSize: 9
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 245, 245]
                 },
                 columnStyles: {
-                    0: {cellWidth: 10},
+                    0: {cellWidth: 12},
                     1: {cellWidth: 25},
                     2: {cellWidth: 25},
                     3: {cellWidth: 25},
                     4: {cellWidth: 25},
                     5: {cellWidth: 15},
-                    6: {cellWidth: 20}
+                    6: {cellWidth: 12}
                 }
             });
+
+            // Add footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for(let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Page ${i} of ${pageCount}`, 105, 287, { align: 'center' });
+                doc.text(new Date().toLocaleDateString(), 195, 287, { align: 'right' });
+            }
 
             doc.save('quran-memorization-schedule.pdf');
         }
