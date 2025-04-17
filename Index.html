@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#2c3e50">
     <meta name="description" content="Quran Memorization Schedule Generator">
     <title>Quran Memorization Schedule</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icon-192x192.png" type="image/png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -328,6 +328,25 @@
         .schedule-item {
             animation: fadeIn 0.3s ease forwards;
         }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -446,13 +465,58 @@
         <div id="scheduleOutput"></div>
     </div>
 
+    <div class="toast" id="toast"></div>
+
     <script>
         // Initialize jsPDF
         const { jsPDF } = window.jspdf;
 
-        // PWA variables
+        // Toast notification function
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // PWA installation
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
+
+        // Only show install button if PWA is not already installed
+        if (!window.matchMedia('(display-mode: standalone)').matches) {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installBtn.style.display = 'flex';
+                
+                installBtn.addEventListener('click', () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then((choiceResult) => {
+                            if (choiceResult.outcome === 'accepted') {
+                                showToast('App installed successfully!');
+                            } else {
+                                showToast('App installation canceled');
+                            }
+                            deferredPrompt = null;
+                            installBtn.style.display = 'none';
+                        });
+                    }
+                });
+            });
+        } else {
+            installBtn.style.display = 'none';
+        }
+
+        // Check if app is running as PWA
+        window.addEventListener('appinstalled', () => {
+            installBtn.style.display = 'none';
+            showToast('App installed successfully!');
+        });
 
         // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
@@ -466,28 +530,6 @@
                     });
             });
         }
-
-        // PWA installation prompt
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'block';
-        });
-
-        installBtn.addEventListener('click', () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('User accepted install prompt');
-                    } else {
-                        console.log('User dismissed install prompt');
-                    }
-                    deferredPrompt = null;
-                    installBtn.style.display = 'none';
-                });
-            }
-        });
 
         // App functionality
         document.getElementById('oldRevisionType').addEventListener('change', function() {
@@ -513,7 +555,7 @@
         function generateSchedule() {
             const startDate = new Date(document.getElementById('startDate').value);
             if (isNaN(startDate.getTime())) {
-                alert('Please select a valid start date');
+                showToast('Please select a valid start date');
                 return;
             }
 
@@ -527,7 +569,7 @@
 
             // Validate already memorized doesn't exceed total pages
             if (alreadyMemorized > totalPages) {
-                alert('Already memorized pages cannot exceed total pages');
+                showToast('Already memorized pages cannot exceed total pages');
                 return;
             }
 
@@ -566,6 +608,13 @@
                 const newRevisionStart = Math.max(0.1, totalMemorized - newRevPages);
                 const newRevisionEnd = totalMemorized;
 
+                // Check if tasks are already completed in localStorage
+                const newCompleted = localStorage.getItem(`day-${day}-new-completed`) === 'true' || 
+                                  (day === 1 && alreadyMemorized > 0);
+                const oldCompleted = localStorage.getItem(`day-${day}-old-completed`) === 'true' || 
+                                   (day === 1 && alreadyMemorized > 0);
+                const revCompleted = localStorage.getItem(`day-${day}-rev-completed`) === 'true';
+
                 schedule.push({
                     day,
                     date: dateString,
@@ -573,19 +622,17 @@
                     newMemorized: {
                         start: startPage,
                         end: endPage,
-                        completed: localStorage.getItem(`day-${day}-new-completed`) === 'true' || 
-                                  (day === 1 && alreadyMemorized > 0) // Mark as completed if already memorized
+                        completed: newCompleted
                     },
                     oldRevision: {
                         start: oldRevisionStart,
                         end: oldRevisionEnd,
-                        completed: localStorage.getItem(`day-${day}-old-completed`) === 'true' || 
-                                  (day === 1 && alreadyMemorized > 0) // Mark as completed if already memorized
+                        completed: oldCompleted
                     },
                     newRevision: {
                         start: newRevisionStart,
                         end: newRevisionEnd,
-                        completed: localStorage.getItem(`day-${day}-rev-completed`) === 'true'
+                        completed: revCompleted
                     },
                     totalMemorized
                 });
@@ -596,6 +643,7 @@
             // Update stats
             updateStats(startDate, schedule);
             displaySchedule(schedule);
+            showToast('Schedule generated successfully!');
         }
 
         function updateStats(startDate, schedule) {
@@ -627,6 +675,11 @@
         function displaySchedule(schedule) {
             const output = document.getElementById('scheduleOutput');
             output.innerHTML = '';
+
+            if (schedule.length === 0) {
+                output.innerHTML = '<p style="text-align: center; padding: 20px;">No schedule generated yet. Click "Generate Schedule" to create one.</p>';
+                return;
+            }
 
             // Group by month (30 days)
             for (let month = 0; month < Math.ceil(schedule.length / 30); month++) {
@@ -678,14 +731,14 @@
                                         <input type="checkbox" class="progress-checkbox" 
                                             data-day="${day.day}" data-task="new" 
                                             ${day.newMemorized.completed ? 'checked' : ''}
-                                            ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value > 0) ? 'disabled' : ''}>
+                                            ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value) > 0 ? 'disabled' : ''}>
                                     </div>
                                     <div class="task-item">
                                         <span class="task-label">Old Rev: P${day.oldRevision.start.toFixed(1)}-P${day.oldRevision.end.toFixed(1)}</span>
                                         <input type="checkbox" class="progress-checkbox" 
                                             data-day="${day.day}" data-task="old" 
                                             ${day.oldRevision.completed ? 'checked' : ''}
-                                            ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value > 0) ? 'disabled' : ''}>
+                                            ${day.day === 1 && parseFloat(document.getElementById('alreadyMemorized').value) > 0 ? 'disabled' : ''}>
                                     </div>
                                     <div class="task-item">
                                         <span class="task-label">New Rev: P${day.newRevision.start.toFixed(1)}-P${day.newRevision.end.toFixed(1)}</span>
@@ -713,7 +766,22 @@
                 checkbox.addEventListener('change', function() {
                     const day = this.getAttribute('data-day');
                     const task = this.getAttribute('data-task');
-                    localStorage.setItem(`day-${day}-${task}-completed`, this.checked);
+                    const isChecked = this.checked;
+                    
+                    // Update in localStorage
+                    localStorage.setItem(`day-${day}-${task}-completed`, isChecked);
+                    
+                    // Update in schedule array
+                    const dayIndex = schedule.findIndex(d => d.day == day);
+                    if (dayIndex !== -1) {
+                        if (task === 'new') {
+                            schedule[dayIndex].newMemorized.completed = isChecked;
+                        } else if (task === 'old') {
+                            schedule[dayIndex].oldRevision.completed = isChecked;
+                        } else if (task === 'rev') {
+                            schedule[dayIndex].newRevision.completed = isChecked;
+                        }
+                    }
                     
                     // Update status in the table
                     const row = this.closest('tr');
@@ -725,6 +793,8 @@
                         // Update month progress
                         updateMonthProgress(row.closest('table'));
                     }
+                    
+                    showToast('Progress updated!');
                 });
             });
         }
@@ -769,6 +839,11 @@
         }
 
         function saveProgress() {
+            if (schedule.length === 0) {
+                showToast('No schedule to save. Generate a schedule first.');
+                return;
+            }
+
             // Save all settings and progress
             const settings = {
                 startDate: document.getElementById('startDate').value,
@@ -779,24 +854,28 @@
                 oldRevPercentage: document.getElementById('oldRevPercentage').value,
                 oldRevFixed: document.getElementById('oldRevFixed').value,
                 newRevPages: document.getElementById('newRevPages').value,
-                totalMemorized: totalMemorized
+                totalMemorized: totalMemorized,
+                schedule: schedule.map(day => ({
+                    day: day.day,
+                    newCompleted: day.newMemorized.completed,
+                    oldCompleted: day.oldRevision.completed,
+                    revCompleted: day.newRevision.completed
+                }))
             };
-            localStorage.setItem('quranMemorizerSettings', JSON.stringify(settings));
             
-            // Save all checkbox states
-            schedule.forEach(day => {
-                localStorage.setItem(`day-${day.day}-new-completed`, day.newMemorized.completed);
-                localStorage.setItem(`day-${day.day}-old-completed`, day.oldRevision.completed);
-                localStorage.setItem(`day-${day.day}-rev-completed`, day.newRevision.completed);
-            });
-            
-            alert('Progress saved successfully!');
+            try {
+                localStorage.setItem('quranMemorizerSettings', JSON.stringify(settings));
+                showToast('Progress saved successfully!');
+            } catch (e) {
+                showToast('Error saving progress: ' + e.message);
+                console.error('Error saving progress:', e);
+            }
         }
 
         function loadProgress() {
             const savedSettings = localStorage.getItem('quranMemorizerSettings');
             if (!savedSettings) {
-                alert('No saved progress found');
+                showToast('No saved progress found');
                 return;
             }
             
@@ -804,14 +883,14 @@
                 const settings = JSON.parse(savedSettings);
                 
                 // Load all settings
-                document.getElementById('startDate').value = settings.startDate;
-                document.getElementById('totalPages').value = settings.totalPages;
+                document.getElementById('startDate').value = settings.startDate || new Date().toISOString().split('T')[0];
+                document.getElementById('totalPages').value = settings.totalPages || 604;
                 document.getElementById('alreadyMemorized').value = settings.alreadyMemorized || 0;
-                document.getElementById('newPerDay').value = settings.newPerDay;
-                document.getElementById('oldRevisionType').value = settings.oldRevisionType;
-                document.getElementById('oldRevPercentage').value = settings.oldRevPercentage;
-                document.getElementById('oldRevFixed').value = settings.oldRevFixed;
-                document.getElementById('newRevPages').value = settings.newRevPages;
+                document.getElementById('newPerDay').value = settings.newPerDay || 0.5;
+                document.getElementById('oldRevisionType').value = settings.oldRevisionType || 'percentage';
+                document.getElementById('oldRevPercentage').value = settings.oldRevPercentage || 14.28571429;
+                document.getElementById('oldRevFixed').value = settings.oldRevFixed || 1;
+                document.getElementById('newRevPages').value = settings.newRevPages || 2;
                 
                 // Trigger the revision type change
                 document.getElementById('oldRevisionType').dispatchEvent(new Event('change'));
@@ -819,10 +898,33 @@
                 // Set total memorized from saved progress
                 totalMemorized = parseFloat(settings.totalMemorized) || parseFloat(settings.alreadyMemorized) || 0;
                 
-                alert('Progress loaded successfully!');
+                // Regenerate the schedule
                 generateSchedule();
+                
+                // After schedule is generated, load the completion status for each day
+                if (settings.schedule) {
+                    settings.schedule.forEach(savedDay => {
+                        const dayIndex = schedule.findIndex(d => d.day === savedDay.day);
+                        if (dayIndex !== -1) {
+                            schedule[dayIndex].newMemorized.completed = savedDay.newCompleted;
+                            schedule[dayIndex].oldRevision.completed = savedDay.oldCompleted;
+                            schedule[dayIndex].newRevision.completed = savedDay.revCompleted;
+                            
+                            // Update localStorage
+                            localStorage.setItem(`day-${savedDay.day}-new-completed`, savedDay.newCompleted);
+                            localStorage.setItem(`day-${savedDay.day}-old-completed`, savedDay.oldCompleted);
+                            localStorage.setItem(`day-${savedDay.day}-rev-completed`, savedDay.revCompleted);
+                        }
+                    });
+                    
+                    // Redisplay the schedule with loaded progress
+                    displaySchedule(schedule);
+                }
+                
+                showToast('Progress loaded successfully!');
             } catch (e) {
-                alert('Error loading progress: ' + e.message);
+                showToast('Error loading progress: ' + e.message);
+                console.error('Error loading progress:', e);
             }
         }
 
@@ -841,15 +943,34 @@
                 
                 // Reset form to defaults
                 document.getElementById('startDate').valueAsDate = new Date();
+                document.getElementById('totalPages').value = 604;
                 document.getElementById('alreadyMemorized').value = 0;
-                totalMemorized = 0;
+                document.getElementById('newPerDay').value = 0.5;
+                document.getElementById('oldRevisionType').value = 'percentage';
+                document.getElementById('oldRevPercentage').value = 14.28571429;
+                document.getElementById('oldRevFixed').value = 1;
+                document.getElementById('newRevPages').value = 2;
                 
-                alert('Progress reset successfully!');
-                generateSchedule();
+                // Trigger the revision type change
+                document.getElementById('oldRevisionType').dispatchEvent(new Event('change'));
+                
+                totalMemorized = 0;
+                schedule = [];
+                
+                // Clear the display
+                document.getElementById('scheduleOutput').innerHTML = '';
+                document.getElementById('statsContainer').style.display = 'none';
+                
+                showToast('Progress reset successfully!');
             }
         }
 
         function exportToPdf() {
+            if (schedule.length === 0) {
+                showToast('No schedule to export. Generate a schedule first.');
+                return;
+            }
+
             const doc = new jsPDF();
             
             // Title
@@ -934,16 +1055,12 @@
             }
 
             doc.save('quran-memorization-schedule.pdf');
+            showToast('PDF exported successfully!');
         }
 
         // Load any saved progress on page load
         window.addEventListener('load', () => {
             loadProgress();
-            
-            // Check if app is running as PWA
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                installBtn.style.display = 'none';
-            }
         });
     </script>
 </body>
