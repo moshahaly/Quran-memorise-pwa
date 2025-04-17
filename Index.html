@@ -6,15 +6,16 @@
     <meta name="theme-color" content="#2c3e50">
     <meta name="description" content="Quran Memorization Schedule Generator">
     <title>Quran Memorization Schedule</title>
-    <link rel="manifest" href="manifest.webmanifest">
-    <link rel="icon" href="icon-192x192.png" type="image/png">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icon-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --primary: #3498db;
             --primary-dark: #2980b9;
+           が生まれました！😄
             --secondary: #2c3e50;
             --accent: #e74c3c;
             --success: #27ae60;
@@ -260,6 +261,7 @@
         #pwa-install-container {
             text-align: center;
             margin-bottom: 25px;
+            display: none;
         }
 
         .stats-container {
@@ -346,11 +348,17 @@
         .toast.show {
             opacity: 1;
         }
+
+        .offline-message {
+            text-align: center;
+            padding: 20px;
+            color: var(--accent);
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="pwa-install-container" style="display: none;">
+        <div id="pwa-install-container">
             <button id="installBtn" class="install-btn success">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L10.293 7.5H4.5z"/>
@@ -462,6 +470,9 @@
         </div>
         
         <div id="scheduleOutput"></div>
+        <div id="offlineMessage" class="offline-message" style="display: none;">
+            <p>You are offline. Some features may be unavailable.</p>
+        </div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -490,6 +501,7 @@
             deferredPrompt = e;
             if (!window.matchMedia('(display-mode: standalone)').matches) {
                 pwaInstallContainer.style.display = 'block';
+                console.log('PWA install prompt available');
             }
 
             installBtn.addEventListener('click', () => {
@@ -504,27 +516,74 @@
                         deferredPrompt = null;
                         pwaInstallContainer.style.display = 'none';
                     });
+                } else {
+                    showToast('Installation prompt not available');
                 }
-            });
+            }, { once: true });
         });
 
         window.addEventListener('appinstalled', () => {
             pwaInstallContainer.style.display = 'none';
             showToast('App installed successfully!');
+            console.log('PWA installed successfully');
         });
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
                 try {
-                    const registration = await navigator.serviceWorker.register('/sw.js');
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                    console.log('ServiceWorker registered with scope: ', registration.scope);
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showToast('New content available. Please refresh.');
+                            }
+                        });
+                    });
                 } catch (err) {
                     console.error('ServiceWorker registration failed: ', err);
                     showToast('Failed to register service worker');
                 }
             });
+        } else {
+            console.warn('ServiceWorker not supported in this browser');
+            showToast('This browser does not support offline features');
         }
+
+        // Handle online/offline status
+        const offlineMessage = document.getElementById('offlineMessage');
+        window.addEventListener('online', () => {
+            offlineMessage.style.display = 'none';
+            showToast('You are back online!');
+        });
+        window.addEventListener('offline', () => {
+            offlineMessage.style.display = 'block';
+            showToast('You are offline. Some features may be limited.');
+        });
+
+        // Verify manifest and icons
+        fetch('/manifest.webmanifest')
+            .then(response => {
+                if (!response.ok) throw new Error('Manifest not found');
+                return response.json();
+            })
+            .then(manifest => {
+                console.log('Manifest loaded successfully:', manifest);
+                manifest.icons.forEach(icon => {
+                    fetch(icon.src)
+                        .then(res => {
+                            if (!res.ok) throw new Error(`Icon not found: ${icon.src}`);
+                            console.log(`Icon loaded: ${icon.src}`);
+                        })
+                        .catch(err => console.error(err.message));
+                });
+            })
+            .catch(err => {
+                console.error('Failed to load manifest:', err);
+                showToast('PWA configuration error. Please check console.');
+            });
 
         // App functionality
         document.getElementById('oldRevisionType').addEventListener('change', function() {
@@ -837,7 +896,7 @@
             };
             
             try {
-                localStorage.setItem('quranMemorizerSettings', JSON.stringify(settings));
+                localStorage.setItem('quran AttendanceMemorizerSettings', JSON.stringify(settings));
                 showToast('Progress saved successfully!');
             } catch (e) {
                 showToast('Error saving progress: ' + e.message);
