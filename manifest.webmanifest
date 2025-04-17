@@ -1,8 +1,9 @@
 {
-  "name": "Quran Memorization Tracker",
+  "name": "Quran Memorizer",
   "short_name": "QuranMem",
-  "description": "Track your Quran memorization progress with daily schedule",
+  "description": "Track your Quran memorization progress",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#2c3e50",
   "theme_color": "#2c3e50",
@@ -20,15 +21,5 @@
       "purpose": "any maskable"
     }
   ],
-  "orientation": "portrait",
-  "scope": "/",
-  "categories": ["education", "productivity", "religious"],
-  "screenshots": [
-    {
-      "src": "screenshot1.png",
-      "sizes": "1280x800",
-      "type": "image/png",
-      "description": "Schedule view"
-    }
-  ]
+  "orientation": "portrait"
 }
