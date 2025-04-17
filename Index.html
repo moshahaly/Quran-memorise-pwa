@@ -1,24 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="QuranMem">
-  
-  <!-- Manifest link -->
-  <link rel="manifest" href="./manifest.webmanifest">
-  
-  <!-- Apple touch icons -->
-  <link rel="apple-touch-icon" href="./icon-192x192.png">
-  <link rel="apple-touch-startup-image" href="./icon-512x512.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2c3e50">
     <meta name="description" content="Quran Memorization Schedule Generator">
     <title>Quran Memorization Schedule</title>
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icon-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -330,7 +320,6 @@
             }
         }
 
-        /* Animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -340,7 +329,6 @@
             animation: fadeIn 0.3s ease forwards;
         }
 
-        /* Toast notification */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -362,10 +350,10 @@
 </head>
 <body>
     <div class="container">
-        <div id="pwa-install-container">
+        <div id="pwa-install-container" style="display: none;">
             <button id="installBtn" class="install-btn success">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/>
+                    <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L10.293 7.5H4.5z"/>
                 </svg>
                 Install App
             </button>
@@ -479,44 +467,6 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // PWA Installation
-let deferredPrompt;
-const installBtn = document.getElementById('installBtn');
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = 'block';
-  
-  installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User ${outcome} the install prompt`);
-      deferredPrompt = null;
-      installBtn.style.display = 'none';
-    }
-  });
-});
-
-window.addEventListener('appinstalled', () => {
-  console.log('PWA was installed');
-  installBtn.style.display = 'none';
-  deferredPrompt = null;
-});
-
-// Service Worker Registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(registration => {
-        console.log('SW registered:', registration);
-      })
-      .catch(err => {
-        console.log('SW registration failed:', err);
-      });
-  });
-}
         // Initialize jsPDF
         const { jsPDF } = window.jspdf;
 
@@ -525,7 +475,6 @@ if ('serviceWorker' in navigator) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.add('show');
-            
             setTimeout(() => {
                 toast.classList.remove('show');
             }, duration);
@@ -534,59 +483,54 @@ if ('serviceWorker' in navigator) {
         // PWA installation
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
+        const pwaInstallContainer = document.getElementById('pwa-install-container');
 
-        // Only show install button if PWA is not already installed
-        if (!window.matchMedia('(display-mode: standalone)').matches) {
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                installBtn.style.display = 'flex';
-                
-                installBtn.addEventListener('click', () => {
-                    if (deferredPrompt) {
-                        deferredPrompt.prompt();
-                        deferredPrompt.userChoice.then((choiceResult) => {
-                            if (choiceResult.outcome === 'accepted') {
-                                showToast('App installed successfully!');
-                            } else {
-                                showToast('App installation canceled');
-                            }
-                            deferredPrompt = null;
-                            installBtn.style.display = 'none';
-                        });
-                    }
-                });
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!window.matchMedia('(display-mode: standalone)').matches) {
+                pwaInstallContainer.style.display = 'block';
+            }
+
+            installBtn.addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            showToast('App installation started!');
+                        } else {
+                            showToast('App installation canceled');
+                        }
+                        deferredPrompt = null;
+                        pwaInstallContainer.style.display = 'none';
+                    });
+                }
             });
-        } else {
-            installBtn.style.display = 'none';
-        }
+        });
 
-        // Check if app is running as PWA
         window.addEventListener('appinstalled', () => {
-            installBtn.style.display = 'none';
+            pwaInstallContainer.style.display = 'none';
             showToast('App installed successfully!');
         });
 
-        // Register Service Worker for PWA
+        // Register Service Worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful');
-                    })
-                    .catch(err => {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                } catch (err) {
+                    console.error('ServiceWorker registration failed: ', err);
+                    showToast('Failed to register service worker');
+                }
             });
         }
 
         // App functionality
         document.getElementById('oldRevisionType').addEventListener('change', function() {
             const type = this.value;
-            document.getElementById('oldRevPercentageGroup').style.display = 
-                type === 'percentage' ? 'block' : 'none';
-            document.getElementById('oldRevFixedGroup').style.display = 
-                type === 'fixed' ? 'block' : 'none';
+            document.getElementById('oldRevPercentageGroup').style.display = type === 'percentage' ? 'block' : 'none';
+            document.getElementById('oldRevFixedGroup').style.display = type === 'fixed' ? 'block' : 'none';
         });
 
         // Set default start date to today
@@ -608,26 +552,24 @@ if ('serviceWorker' in navigator) {
                 return;
             }
 
-            const totalPages = parseFloat(document.getElementById('totalPages').value);
-            const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value);
-            const newPerDay = parseFloat(document.getElementById('newPerDay').value);
+            const totalPages = parseFloat(document.getElementById('totalPages').value) || 604;
+            const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value) || 0;
+            const newPerDay = parseFloat(document.getElementById('newPerDay').value) || 0.5;
             const oldRevType = document.getElementById('oldRevisionType').value;
-            const oldRevPercentage = parseFloat(document.getElementById('oldRevPercentage').value) / 100;
-            const oldRevFixed = parseFloat(document.getElementById('oldRevFixed').value);
-            const newRevPages = parseFloat(document.getElementById('newRevPages').value);
+            const oldRevPercentage = parseFloat(document.getElementById('oldRevPercentage').value) / 100 || 0.1428571429;
+            const oldRevFixed = parseFloat(document.getElementById('oldRevFixed').value) || 1;
+            const newRevPages = parseFloat(document.getElementById('newRevPages').value) || 2;
 
-            // Validate already memorized doesn't exceed total pages
             if (alreadyMemorized > totalPages) {
                 showToast('Already memorized pages cannot exceed total pages');
                 return;
             }
 
             schedule = [];
-            totalMemorized = alreadyMemorized; // Start from already memorized pages
+            totalMemorized = alreadyMemorized;
             let day = 1;
 
             while (totalMemorized < totalPages) {
-                // Calculate date for this day
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + day - 1);
                 const dateString = currentDate.toLocaleDateString('en-US', { 
@@ -637,29 +579,25 @@ if ('serviceWorker' in navigator) {
                     weekday: 'short'
                 });
 
-                // New memorization
                 const newMemorized = Math.min(newPerDay, totalPages - totalMemorized);
                 const startPage = totalMemorized + 0.1;
                 totalMemorized += newMemorized;
                 const endPage = totalMemorized;
 
-                // Old revision - includes already memorized pages
                 let oldRevisionPages = 0;
                 if (oldRevType === 'percentage') {
                     oldRevisionPages = totalMemorized * oldRevPercentage;
                 } else {
                     oldRevisionPages = Math.min(oldRevFixed, totalMemorized);
                 }
-                const oldRevisionStart = 0.1; // Always start from beginning
+                const oldRevisionStart = 0.1;
                 const oldRevisionEnd = oldRevisionPages;
 
-                // New revision (last X pages)
                 const newRevisionStart = Math.max(0.1, totalMemorized - newRevPages);
                 const newRevisionEnd = totalMemorized;
 
-                // Check if tasks are already completed in localStorage
                 const newCompleted = localStorage.getItem(`day-${day}-new-completed`) === 'true' || 
-                                  (day === 1 && alreadyMemorized > 0);
+                                    (day === 1 && alreadyMemorized > 0);
                 const oldCompleted = localStorage.getItem(`day-${day}-old-completed`) === 'true' || 
                                    (day === 1 && alreadyMemorized > 0);
                 const revCompleted = localStorage.getItem(`day-${day}-rev-completed`) === 'true';
@@ -689,7 +627,6 @@ if ('serviceWorker' in navigator) {
                 day++;
             }
 
-            // Update stats
             updateStats(startDate, schedule);
             displaySchedule(schedule);
             showToast('Schedule generated successfully!');
@@ -702,7 +639,6 @@ if ('serviceWorker' in navigator) {
             const totalDays = schedule.length;
             document.getElementById('totalDaysStat').textContent = totalDays;
             
-            // Calculate completion date
             if (totalDays > 0) {
                 const completionDate = new Date(startDate);
                 completionDate.setDate(startDate.getDate() + totalDays - 1);
@@ -714,9 +650,8 @@ if ('serviceWorker' in navigator) {
                     });
             }
             
-            // Calculate progress
-            const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value);
-            const totalPages = parseFloat(document.getElementById('totalPages').value);
+            const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value) || 0;
+            const totalPages = parseFloat(document.getElementById('totalPages').value) || 604;
             const progress = Math.round((alreadyMemorized / totalPages) * 100);
             document.getElementById('progressStat').textContent = `${progress}%`;
         }
@@ -730,7 +665,6 @@ if ('serviceWorker' in navigator) {
                 return;
             }
 
-            // Group by month (30 days)
             for (let month = 0; month < Math.ceil(schedule.length / 30); month++) {
                 const monthStart = month * 30;
                 const monthEnd = Math.min((month + 1) * 30, schedule.length);
@@ -739,12 +673,10 @@ if ('serviceWorker' in navigator) {
                 const monthHeader = document.createElement('h2');
                 monthHeader.className = 'month-header';
                 
-                // Get month name from the first day in the month
                 const firstDate = monthSchedule[0].dateObj;
                 const monthName = firstDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
                 monthHeader.textContent = `${monthName}`;
                 
-                // Add progress percentage
                 const progressSpan = document.createElement('span');
                 const completedDays = monthSchedule.filter(day => 
                     calculateDayCompletion(day) >= 100
@@ -810,17 +742,14 @@ if ('serviceWorker' in navigator) {
                 output.appendChild(table);
             }
 
-            // Add event listeners to checkboxes
             document.querySelectorAll('.progress-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
                     const day = this.getAttribute('data-day');
                     const task = this.getAttribute('data-task');
                     const isChecked = this.checked;
                     
-                    // Update in localStorage
                     localStorage.setItem(`day-${day}-${task}-completed`, isChecked);
                     
-                    // Update in schedule array
                     const dayIndex = schedule.findIndex(d => d.day == day);
                     if (dayIndex !== -1) {
                         if (task === 'new') {
@@ -832,14 +761,11 @@ if ('serviceWorker' in navigator) {
                         }
                     }
                     
-                    // Update status in the table
                     const row = this.closest('tr');
                     const dayData = schedule.find(d => d.day == day);
                     if (dayData) {
                         const statusCell = row.querySelector('td:nth-child(4)');
                         statusCell.innerHTML = getStatusBadge(dayData);
-                        
-                        // Update month progress
                         updateMonthProgress(row.closest('table'));
                     }
                     
@@ -869,7 +795,6 @@ if ('serviceWorker' in navigator) {
                 }).length;
                 const progressPercent = Math.round((completedDays / rows.length) * 100);
                 
-                // Update progress in header
                 const progressSpan = monthHeader.querySelector('span');
                 if (progressSpan) {
                     progressSpan.textContent = `${progressPercent}% completed`;
@@ -893,7 +818,6 @@ if ('serviceWorker' in navigator) {
                 return;
             }
 
-            // Save all settings and progress
             const settings = {
                 startDate: document.getElementById('startDate').value,
                 totalPages: document.getElementById('totalPages').value,
@@ -931,7 +855,6 @@ if ('serviceWorker' in navigator) {
             try {
                 const settings = JSON.parse(savedSettings);
                 
-                // Load all settings
                 document.getElementById('startDate').value = settings.startDate || new Date().toISOString().split('T')[0];
                 document.getElementById('totalPages').value = settings.totalPages || 604;
                 document.getElementById('alreadyMemorized').value = settings.alreadyMemorized || 0;
@@ -941,16 +864,12 @@ if ('serviceWorker' in navigator) {
                 document.getElementById('oldRevFixed').value = settings.oldRevFixed || 1;
                 document.getElementById('newRevPages').value = settings.newRevPages || 2;
                 
-                // Trigger the revision type change
                 document.getElementById('oldRevisionType').dispatchEvent(new Event('change'));
                 
-                // Set total memorized from saved progress
                 totalMemorized = parseFloat(settings.totalMemorized) || parseFloat(settings.alreadyMemorized) || 0;
                 
-                // Regenerate the schedule
                 generateSchedule();
                 
-                // After schedule is generated, load the completion status for each day
                 if (settings.schedule) {
                     settings.schedule.forEach(savedDay => {
                         const dayIndex = schedule.findIndex(d => d.day === savedDay.day);
@@ -959,14 +878,12 @@ if ('serviceWorker' in navigator) {
                             schedule[dayIndex].oldRevision.completed = savedDay.oldCompleted;
                             schedule[dayIndex].newRevision.completed = savedDay.revCompleted;
                             
-                            // Update localStorage
                             localStorage.setItem(`day-${savedDay.day}-new-completed`, savedDay.newCompleted);
                             localStorage.setItem(`day-${savedDay.day}-old-completed`, savedDay.oldCompleted);
                             localStorage.setItem(`day-${savedDay.day}-rev-completed`, savedDay.revCompleted);
                         }
                     });
                     
-                    // Redisplay the schedule with loaded progress
                     displaySchedule(schedule);
                 }
                 
@@ -979,18 +896,15 @@ if ('serviceWorker' in navigator) {
 
         function resetProgress() {
             if (confirm('Are you sure you want to reset ALL progress? This cannot be undone.')) {
-                // Clear all progress-related items
                 localStorage.removeItem('quranMemorizerSettings');
                 
-                // Clear all day-specific progress
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key.startsWith('day-')) {
+                    if (key && key.startsWith('day-')) {
                         localStorage.removeItem(key);
                     }
                 }
                 
-                // Reset form to defaults
                 document.getElementById('startDate').valueAsDate = new Date();
                 document.getElementById('totalPages').value = 604;
                 document.getElementById('alreadyMemorized').value = 0;
@@ -1000,13 +914,11 @@ if ('serviceWorker' in navigator) {
                 document.getElementById('oldRevFixed').value = 1;
                 document.getElementById('newRevPages').value = 2;
                 
-                // Trigger the revision type change
                 document.getElementById('oldRevisionType').dispatchEvent(new Event('change'));
                 
                 totalMemorized = 0;
                 schedule = [];
                 
-                // Clear the display
                 document.getElementById('scheduleOutput').innerHTML = '';
                 document.getElementById('statsContainer').style.display = 'none';
                 
@@ -1022,25 +934,21 @@ if ('serviceWorker' in navigator) {
 
             const doc = new jsPDF();
             
-            // Title
             doc.setFontSize(20);
             doc.text('Quran Memorization Schedule', 105, 15, { align: 'center' });
             
-            // Add already memorized info
             const alreadyMemorized = parseFloat(document.getElementById('alreadyMemorized').value);
             if (alreadyMemorized > 0) {
                 doc.setFontSize(12);
                 doc.text(`Already Memorized: Pages 0.1-${alreadyMemorized.toFixed(1)}`, 14, 25);
             }
             
-            // Add stats
             doc.setFontSize(10);
             doc.setTextColor(100);
             doc.text(`Start Date: ${document.getElementById('startDate').value}`, 14, 35);
             doc.text(`Total Pages: ${document.getElementById('totalPages').value}`, 14, 40);
             doc.text(`New Pages/Day: ${document.getElementById('newPerDay').value}`, 14, 45);
             
-            // Table headers
             const headers = [
                 'Day',
                 'Date',
@@ -1051,7 +959,6 @@ if ('serviceWorker' in navigator) {
                 'Status'
             ];
 
-            // Table data
             const data = schedule.map(day => [
                 day.day,
                 day.date,
@@ -1063,7 +970,6 @@ if ('serviceWorker' in navigator) {
                 calculateDayCompletion(day) > 0 ? '🟡' : '🔴'
             ]);
 
-            // Create table
             doc.autoTable({
                 head: [headers],
                 body: data,
@@ -1093,9 +999,8 @@ if ('serviceWorker' in navigator) {
                 }
             });
 
-            // Add footer
             const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
+            for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
                 doc.setFontSize(8);
                 doc.setTextColor(150);
@@ -1107,7 +1012,6 @@ if ('serviceWorker' in navigator) {
             showToast('PDF exported successfully!');
         }
 
-        // Load any saved progress on page load
         window.addEventListener('load', () => {
             loadProgress();
         });
