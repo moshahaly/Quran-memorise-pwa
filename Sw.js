@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quran-memorizer-v2';
+const CACHE_NAME = 'quran-memorizer-v3';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -14,8 +14,11 @@ self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Caching resources');
+                console.log('Caching resources:', urlsToCache);
                 return cache.addAll(urlsToCache)
+                    .then(() => {
+                        console.log('All resources cached successfully');
+                    })
                     .catch(err => {
                         console.error('Failed to cache resource:', err);
                     });
@@ -60,6 +63,7 @@ self.addEventListener('fetch', event => {
                         caches.open(CACHE_NAME)
                             .then(cache => {
                                 cache.put(event.request, responseToCache);
+                                console.log('Cached new resource:', event.request.url);
                             })
                             .catch(err => {
                                 console.error('Failed to cache:', err);
@@ -67,8 +71,8 @@ self.addEventListener('fetch', event => {
 
                         return networkResponse;
                     })
-                    .catch(() => {
-                        console.warn('Fetch failed, serving offline page');
+                    .catch(err => {
+                        console.warn('Fetch failed, serving offline page:', err);
                         return caches.match('/offline.html');
                     });
             })
