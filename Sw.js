@@ -1,41 +1,54 @@
-const CACHE_NAME = 'quran-memorizer-v3';  // Updated version
+const CACHE_NAME = 'quran-memorizer-v4';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icon-192x192.png',
-  '/icon-512x512.png',  // ← Added missing icon
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './icon-192x192.png',
+  './icon-512x512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js'
 ];
 
+// Install event
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS_TO_CACHE))
-      .then(() => self.skipWaiting())  // ← Force activate new SW
-  );
-});
-
-self.addEventListener('fetch', (event) => {
-  // Network-first strategy
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // Cache new responses
-        const clone = response.clone();
-        caches.open(CACHE_NAME)
-          .then(cache => cache.put(event.request, clone));
-        return response;
+      .then(cache => {
+        console.log('Opened cache');
+        return cache.addAll(ASSETS_TO_CACHE);
       })
-      .catch(() => caches.match(event.request))  // Fallback to cache
+      .then(() => self.skipWaiting())
   );
 });
 
+// Activate event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.map(key => key !== CACHE_NAME && caches.delete(key))
-    )).then(() => self.clients.claim())  // ← Control all pages
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
+});
+
+// Fetch event
+self.addEventListener('fetch', (event) => {
+  if (event.request.url.startsWith('http')) {
+    event.respondWith(
+      caches.match(event.request).then(response => {
+        return response || fetch(event.request).then(fetchResponse => {
+          return caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, fetchResponse.clone());
+            return fetchResponse;
+          });
+        });
+      })
+    );
+  }
 });
